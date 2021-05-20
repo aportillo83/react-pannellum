@@ -1,5 +1,7 @@
 # react-pannellum
 
+## Version `0.2.x` with a lot of changes
+
 > A library show panorama image for react
 
 > This library use source from [https://pannellum.org/](https://pannellum.org/)
@@ -52,13 +54,75 @@ class Example extends React.Component {
 
 An unique ID for the first scene.
 
-### imageSource (required): string
-
-Path of image you want to display
-
 ### id (required): string
 
 Unique id for component
+
+### type (optional): string
+
+This specifies the panorama type. Can be `equirectangular`, `cubemap`, or `multires`. Defaults to `equirectangular`.
+
+### imageSource (optional): string
+
+Will required when type is `equirectangular`
+
+Path of image you want to display. Sets the URL to the equirectangular panorama image. This is relative to `basePath` if it is set, else it is relative to the location of `pannellum.htm`. An absolute URL can also be used.
+
+### equirectangularOptions (optional): object
+
+For `equirectangular` type only.
+
+> ### haov (number)
+
+> Sets the panorama’s horizontal angle of view, in degrees. Defaults to `360`. This is used if the equirectangular image does not cover a full 360 degrees in the horizontal.
+
+> ### vaov (number)
+
+> Sets the panorama’s vertical angle of view, in degrees. Defaults to `180`. This is used if the equirectangular image does not cover a full 180 degrees in the vertical.
+
+> ### vOffset (number)
+
+> Sets the vertical offset of the center of the equirectangular image from the horizon, in degrees. Defaults to `0`. This is used if `vaov` is less than `180` and the equirectangular image is not cropped symmetrically.
+
+> ### ignoreGPanoXMP (boolean)
+
+> If set to `true`, any embedded Photo Sphere XMP data will be ignored; else, said data will override any existing settings. Defaults to `false`.
+
+### cubeMap (optional - specific options): array
+
+This is an array of URLs for the six cube faces in the order front, right, back, left, up, down. These are relative to `basePath` if it is set, else they are relative to the location of `pannellum.htm`. Absolute URLs can also be used. Partial cubemap images may be specified by giving `null` instead of a URL.
+
+### multiRes (optional - specific options): object
+
+This contains information about the multiresolution panorama in sub-keys.
+
+> ### basePath (string)
+
+> This is the base path of the URLs for the multiresolution tiles. It is relative to the regular `basePath` option if it is defined, else it is relative to the location of `pannellum.htm`. An absolute URL can also be used.
+
+> ### path (string)
+
+> This is a format string for the location of the multiresolution tiles, relative to `multiRes.basePath`, which is relative to `basePath`. Format parameters are `%l` for the zoom level, `%s` for the cube face, `%x` for the x index, and `%y` for the y index. For each tile, `.extension` is appended.
+
+> ### fallbackPath (string)
+
+> This is a format string for the location of the fallback tiles for the CSS 3D transform-based renderer if the WebGL renderer is not supported, relative to `multiRes.basePath`, which is relative to `basePath`. The only format parameter is `%s`, for the cube face. For each face, `.extension` is appended.
+
+> ### extension (string)
+
+> Specifies the tiles’ file extension. Do not include the `.`.
+
+> ### tileResolution (number)
+
+> This specifies the size in pixels of each image tile.
+
+> ### maxLevel (number)
+
+> This specifies the maximum zoom level.
+
+> ### cubeResolution (number)
+
+> This specifies the size in pixels of the full resolution cube faces the image tiles were created from.
 
 ### style (optional): object
 
@@ -88,6 +152,18 @@ config = {
 };
 ```
 
+### title (optional): string
+
+If set, the value is displayed as the panorama’s title. If no title is desired, don’t set this parameter.
+
+### description (optional): string
+
+If set, the value is displayed as the panorama’s description. If no description is desired, don’t set this parameter.
+
+### author (optional): string
+
+If set, the value is displayed as the panorama’s author. If no author is desired, don’t set this parameter.
+
 ### autoLoad (optional): boolean
 
 When set to `true`, the panorama will automatically load. When `false`, the user needs to click on the load button to load the panorama. Defaults to `false`.
@@ -107,6 +183,18 @@ Sets the delay, in milliseconds, to stop automatically rotating the panorama aft
 ### preview (optional): string
 
 Specifies a URL for a preview image to display before the panorama is loaded.
+
+### previewTitle (optional): string
+
+Specifies the title to be displayed while the load button is displayed.
+
+### previewDescription (optional): string
+
+Specifies the description to be displayed while the load button is displayed.
+
+### previewAuthor (optional): string
+
+Specifies the author to be displayed while the load button is displayed.
 
 ### uiText (optional): object
 
@@ -145,6 +233,10 @@ If set to `true`, zooming with double click will be enabled. Defaults to `false`
 
 If set to `false`, mouse and touch dragging is disabled. Defaults to `true`.
 
+### friction (optional): number
+
+Controls the “friction” that slows down the viewer motion after it is dragged and released. Higher values mean the motion stops faster. Should be set (0.0, 1.0]; defaults to 0.15.
+
 ### disableKeyboardCtrl (optional): boolean
 
 If set to `true`, keyboard controls are disabled. Defaults to `false`.
@@ -156,6 +248,10 @@ If set to `false`, the fullscreen control will not be displayed. Defaults to `tr
 ### showControls (optional): boolean
 
 If set to `false`, no controls are displayed. Defaults to `true`.
+
+### touchPanSpeedCoeffFactor (optional): number
+
+Adjusts panning speed from touch inputs. Defaults to `1`.
 
 ### yaw (optional): number
 
@@ -173,6 +269,14 @@ Sets the minimum / maximum yaw the viewer edge can be at, in degrees. Defaults t
 
 Sets the minimum / maximum pitch the viewer edge can be at, in degrees. Defaults to -90 / 90.
 
+### `minHfov` and `maxHfov` (optional): number
+
+Sets the minimum / maximum horizontal field of view, in degrees, that the viewer can be set to. Defaults to `50` / `120`. Unless the `multiResMinHfov` parameter is set to `true`, the `minHfov` parameter is ignored for `multires` panoramas.
+
+### multiResMinHfov: boolean
+
+When set to `false`, the `minHfov` parameter is ignored for `multires` panoramas; an automatically calculated minimum horizontal field of view is used instead. Defaults to `false`.
+
 ### hfov (optional): number
 
 Sets the panorama’s starting horizontal field of view in degrees. Defaults to `100`.
@@ -185,9 +289,13 @@ If `true`, a compass is displayed. Normally defaults to `false`.
 
 Set the offset, in degrees, of the center of the panorama from North. As this affects the compass, it only has an effect if `compass` is set to `true`. Default to `0`
 
+### escapeHTML (optional): boolean
+
+When true, HTML is escaped from configuration strings to help mitigate possible DOM XSS attacks. This is always `true` when using the standalone viewer since the configuration is provided via the URL; it defaults to `false` but can be set to `true` when using the API.
+
 ### hotSpots (optional): array
 
-This specifies an array of hot spots that can be links to other scenes, information, or external links. Each array element has the following properties:
+This specifies a dictionary of hot spots that can be links to other scenes, information, or external links. Each array element has the following properties:
 
 #### pitch (number)
 
@@ -245,9 +353,25 @@ If clickHandlerFunc is specified, this function is added as an event handler for
 
 When `true`, the mouse pointer’s pitch and yaw are logged to the console when the mouse button is clicked. Defaults to `false`.
 
+### sceneFadeDuration (optional): number
+
+Specifies the fade duration, in milliseconds, when transitioning between scenes. Not defined by default. Only applicable for tours. Only works with WebGL renderer.
+
+### capturedKeyNumbers (optional): array
+
+Specifies the key numbers that are captured in key events. Defaults to the standard keys that are used by the viewer.
+
+### backgroundColor (optional): [number, number, number]
+
+Specifies an array containing RGB values [0, 1] that sets the background color for areas where no image data is available. Defaults to `[0, 0, 0]` (black). For partial `equirectangular` panoramas this applies to areas past the edges of the defined rectangle. For `multires` and `cubemap` (including fallback) panoramas this applies to areas corresponding to missing tiles or faces.
+
+### avoidShowingBackground (optional): boolean
+
+If set to `true`, prevent displaying out-of-range areas of a partial panorama by constraining the yaw and the field-of-view. Even at the corners and edges of the canvas only areas actually belonging to the image (i.e., within [`minYaw`, `maxYaw`] and [`minPitch`, `maxPitch`]) are shown, thus setting the `backgroundColor` option is not needed if this option is set. Defaults to `false`.
+
 ## <a id="apiEvents" ></a> API Events
 
-### - Do not call API event in `componentDidMount` or API event will return undefined.
+### Do not call API event in `componentDidMount` or API event will return undefined.
 
 > ### isLoaded
 >
@@ -510,6 +634,10 @@ Returns `true` if supported, else `false`.
 > Check if device orientation control is currently activated.
 
 Returns `true` if active, else `false`.
+
+> ### getViewer
+>
+> Get panorama settings
 
 > ### destroy
 >

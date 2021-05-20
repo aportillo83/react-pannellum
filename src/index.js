@@ -1,4 +1,4 @@
-import ReactPannellum from "./components/ReactPannellum";
+import ReactPannellum from "./components/ReactPannellum.jsx";
 
 const addScene = ReactPannellum.addScene;
 
@@ -80,6 +80,8 @@ const startOrientation = ReactPannellum.startOrientation;
 
 const isOrientationActive = ReactPannellum.isOrientationActive;
 
+const getViewer = ReactPannellum.getViewer;
+
 export default ReactPannellum;
 
 export {
@@ -123,4 +125,5 @@ export {
   stopOrientation,
   startOrientation,
   isOrientationActive,
+  getViewer,
 };
