@@ -1,0 +1,5 @@
+Warinings
+
+PS C:\Users\afkaa\code\react-pannellum> npm install video.js --save
+npm WARN deprecated rollup-plugin-replace@2.2.0: This module has moved and is now available at @rollup/plugin-replace. Please update your dependencies. This version is no longer maintained.
+npm WARN deprecated xmldom@0.4.0: Deprecated due to CVE-2021-21366 resolved in 0.5.0

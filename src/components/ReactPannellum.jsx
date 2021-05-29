@@ -1,9 +1,14 @@
 import React from "react";
 import PropTypes from "prop-types";
-import pannellum from "../libs/pannellum.js";
+import videojs from "video.js";
 import { myPromise } from "../utils/utils";
 import { configs } from "../utils/constants";
+
+import "../libs/libpannellum.js";
+import "../libs/pannellum.js";
+import "../libs/videojs-pannellum-plugin.js";
 import "../css/pannellum.css";
+import "../css/video-js.css";
 
 let myPannellum = null;
 
@@ -47,37 +52,71 @@ class ReactPannellum extends React.Component {
     equirectangularOptions: {},
     cubeMap: [],
     multiRes: {},
+    isVideo: false
   };
 
   init = () => {
+    const { sceneId } = this.props;
+
+    const pannellumConfig = this.initPannellumConfig(sceneId);
+
+    this.video = videojs(this.videoNode, {
+      plugins: {
+        pannellum: pannellumConfig 
+      }
+    });
+
+    myPannellum = this.video.pnlmViewer;
+    myPannellum.on("scenechange", this.sceneChangeHandler);
+
+    if(pannellumConfig.scenes[sceneId].dynamic) {
+      this.video.src({ type: 'video/mp4', src: pannellumConfig.scenes[pannellumConfig.default.firstScene].imageSource }); //TODO: Put correct extension
+      this.video.play();
+    } else {
+      // Override options
+      //let currentConf = myPannellum.getConfig();
+      //currentConf.dynamic = false;
+      //currentConf.panorama = pannellumConfig.scenes[sceneId].panorama;
+      myPannellum.on("load", this.sceneLoadedHandler);
+      myPannellum.loadScene(sceneId);
+    }
+    this.props.onPanoramaLoaded && myPannellum.on("load", () => this.props.onPanoramaLoaded());
+  };
+
+  initPannellumConfig(sceneId) {
+    let { config, type } = this.props;
+    config.scenes = config.scenes || [];
     const {
-      imageSource,
       equirectangularOptions,
       cubeMap,
       multiRes,
+      imageSource
     } = this.state;
-    const { sceneId, config, type } = this.props;
-    myPannellum = pannellum.viewer(this.props.id, {
+    const source = config.scenes[sceneId] ? config.scenes[sceneId].imageSource || imageSource : imageSource;
+    const isVideo = ReactPannellum.isPathVideo(source);
+    return {
+      dynamic: isVideo,
       default: {
         firstScene: sceneId,
       },
       scenes: {
+        ...config.scenes,
         [sceneId]: {
           ...configs.panoramaConfigs,
           ...configs.equirectangularOptions,
           ...configs.uiText,
           ...config,
           type,
-          imageSource,
           ...equirectangularOptions,
+          imageSource: source,
+          panorama: isVideo ? undefined : source,
           cubeMap,
           multiRes,
+          dynamic: isVideo
         },
       },
-    });
-    this.props.onPanoramaLoaded &&
-      myPannellum.on("load", () => this.props.onPanoramaLoaded());
-  };
+    }
+  }
 
   initPanalleum() {
     const {
@@ -87,6 +126,11 @@ class ReactPannellum extends React.Component {
       multiRes,
       equirectangularOptions,
     } = this.props;
+
+    this.setState({
+      isVideo: ReactPannellum.isPathVideo(imageSource)
+    });
+
     switch (type) {
       case "equirectangular":
         this.setState(
@@ -122,14 +166,32 @@ class ReactPannellum extends React.Component {
     }
   }
 
+  sceneChangeHandler = (e) => {
+    console.log("Changing scene: ", e);
+
+    const config = myPannellum.getConfig();
+    const isNextSceneVideo = ReactPannellum.isPathVideo(config.scenes[e].imageSource);
+    
+    config.dynamic = isNextSceneVideo;
+    config.panorama = isNextSceneVideo ? config.panorama : config.scenes[e].panorama; //TODO: Use video node?
+    myPannellum.setUpdate(isNextSceneVideo);
+    myPannellum.getContainer().style.visibility = isNextSceneVideo ? 'hidden' : 'visible';
+
+    this.setState({ isVideo: isNextSceneVideo});
+  }
+  
+  sceneLoadedHandler = (e) => {
+    console.log("Loaded: ", e);
+  }
+
   componentDidMount() {
     this.initPanalleum();
   }
 
   componentWillUnmount() {
-    myPannellum &&
-      this.props.onPanoramaLoaded &&
-      myPannellum.off("load", this.props.onPanoramaLoaded);
+    myPannellum && this.props.onPanoramaLoaded && myPannellum.off("load", this.props.onPanoramaLoaded);
+    if(this.player)
+      this.player.dispose();
   }
 
   static isLoaded() {
@@ -398,10 +460,25 @@ class ReactPannellum extends React.Component {
     return myPannellum;
   }
 
+  static isPathVideo(path) {
+    return /\.(webm|mp4)$/.test(path); //TODO: Validate video formats
+  }
+
   render() {
     const { style, className, id, children } = this.props;
     return (
-      <div id={id} style={style} className={className} children={children} />
+      <div data-vjs-player>
+        <video
+          id={id}
+          ref={node => this.videoNode = node}
+          className={"video-js vjs-default-skin vjs-big-play-centered " + className}
+          preload="auto"
+          muted={true}
+          autoPlay={true}
+          loop
+          crossOrigin="anonymous"
+          style={style} />
+      </div>
     );
   }
 }
